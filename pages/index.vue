@@ -30,7 +30,7 @@
 
 <script setup lang="ts">
 const weather = ref(null);
-const location = ref('');
+const location = ref('london');
 
 async function getWeather(location: string) {
   try {
@@ -40,4 +40,8 @@ async function getWeather(location: string) {
     console.error(error);
   }
 }
+
+onMounted(() => {
+  getWeather(location.value);
+});
 </script>
