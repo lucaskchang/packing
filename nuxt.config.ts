@@ -6,7 +6,7 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
-      title: 'Bay Clock 3',
+      title: 'Packing List Generator',
       htmlAttrs: {
         lang: 'en',
       },
