@@ -5,22 +5,14 @@
         Packing List Generator
       </p>
       <div class="mx-auto flex w-5/6 flex-row space-x-4 pt-12">
-        <div class="flex w-3/6 flex-col">
+        <div class="flex w-3/5 flex-col">
           <UInput
             v-model="location"
             placeholder="Where are you going?"
             icon="i-heroicons-map"
           />
         </div>
-        <div class="flex w-1/6 flex-col">
-          <UInput
-            v-model="startDate"
-            type="date"
-            placeholder="Days"
-            icon="i-heroicons-calendar-days"
-          />
-        </div>
-        <div class="flex w-1/6 flex-col">
+        <div class="flex w-1/5 flex-col">
           <UInput
             v-model="days"
             type="number"
@@ -28,7 +20,7 @@
             icon="i-heroicons-calendar-days"
           />
         </div>
-        <div class="flex w-1/6 flex-col">
+        <div class="flex w-1/5 flex-col">
           <UButton
             class="mx-auto"
             icon="i-heroicons-sparkles"
@@ -39,38 +31,41 @@
         </div>
       </div>
       <div
-        v-if="location && startDate && days"
+        v-if="location && days"
         class="mt-12 p-4 text-center"
       >
-        <p
-          class="text-3xl font-bold"
-        >
-          Packing list for {{ location }} from {{ useDateFormat(startDate, 'ddd MMMM D YYYY').value }} to {{ useDateFormat(endDate, 'ddd MMMM D YYYY').value }}
+        <p class="text-3xl font-bold">
+          Packing list
         </p>
-        <div class="mt-8 flex flex-row">
+        <div class="mt-4 flex flex-row">
           <div class="flex w-1/5 flex-col">
             <p class="text-2xl font-semibold">
               Clothes
             </p>
             <div class="mx-auto mt-2">
               <UCheckbox
-                :label="`${days.toString()} Shirt${days > 1 ? 's': ''}`"
+                :label="`${setsOfClothes} Shirt${days > 1 ? 's': ''}`"
                 required
               />
               <UCheckbox
-                :label="`${days.toString()} Short${days > 1 ? 's': ''}`"
+                :label="`${setsOfClothes} Short${days > 1 ? 's': ''}`"
                 required
               />
               <UCheckbox
-                :label="`${days.toString()} Underpants`"
+                :label="`${setsOfClothes} Underpants`"
                 required
               />
               <UCheckbox
-                :label="`${days.toString()} Socks`"
+                :label="`${setsOfClothes} Socks`"
                 required
               />
               <UCheckbox
                 label="1 Hoodie"
+                required
+              />
+              <UCheckbox
+                v-if="highestChanceOfRain > 25"
+                label="1 Rain Jacket"
                 required
               />
             </div>
@@ -81,15 +76,15 @@
             </p>
             <div class="mx-auto mt-2">
               <UCheckbox
-                :label="`${days.toString()} Shirt${days > 1 ? 's': ''}`"
+                :label="`${setsOfClothes} Shirt${days > 1 ? 's': ''}`"
                 required
               />
               <UCheckbox
-                :label="`${days.toString()} Short${days > 1 ? 's': ''}`"
+                :label="`${setsOfClothes} Short${days > 1 ? 's': ''}`"
                 required
               />
               <UCheckbox
-                :label="`${days.toString()} Socks`"
+                :label="`${setsOfClothes} Socks`"
                 required
               />
               <UCheckbox
@@ -146,11 +141,16 @@
                 required
               />
               <UCheckbox
+                v-if="highestUV > 3"
                 label="Suncreen"
                 required
               />
               <UCheckbox
                 label="Deodorant"
+                required
+              />
+              <UCheckbox
+                label="Lactase Pills"
                 required
               />
               <UCheckbox
@@ -189,12 +189,15 @@
             <div class="mx-auto mt-2">
               <UCheckbox
                 label="Eye Mask"
+                required
               />
               <UCheckbox
                 label="Journal"
+                required
               />
               <UCheckbox
                 label="Laundry Bag"
+                required
               />
               <UCheckbox
                 label="Clif Bar"
@@ -202,13 +205,46 @@
             </div>
           </div>
         </div>
-        <div class="mt-8">
-          <pre
-            v-if="weather"
-            class="text-left"
-          >
-        {{ weather }}
-      </pre>
+        <div
+          v-if="weather"
+          class="mt-8"
+        >
+          <p class="text-3xl font-bold">
+            Weather Forecast
+          </p>
+          <div class="mt-4 flex flex-row justify-center space-x-8">
+            <div
+              v-for="forecast of weather.forecast.forecastday"
+              :key="forecast.date"
+              class="flex w-1/6 flex-col rounded-lg p-4 ring-4 ring-black dark:ring-white"
+            >
+              <p class="text-2xl font-semibold">
+                {{ forecast.date }}
+              </p>
+              <div class="flex flex-row items-center justify-center">
+                <div class="flex flex-col">
+                  <img
+                    :src="forecast.day.condition.icon"
+                    class="size-8"
+                  >
+                </div>
+                <p>
+                  {{ forecast.day.condition.text }}
+                </p>
+              </div>
+              <div class="mt-4 text-left text-lg">
+                <p class="text-lg">
+                  {{ forecast.day.mintemp_f }}°F - {{ forecast.day.maxtemp_f }}°F
+                </p>
+                <p class="text-lg">
+                  {{ forecast.day.daily_chance_of_rain }}% chance of rain
+                </p>
+                <p class="text-lg">
+                  UV Index: {{ forecast.day.uv }}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -223,13 +259,22 @@
 
 <script setup lang="ts">
 const weather = ref(null);
-const location = ref('');
+const location = ref('San Francisco');
 const days = ref(1);
-const startDate = ref('');
-const endDate = computed(() => {
-  const d = new Date(startDate.value);
-  d.setDate(d.getDate() + days.value + 1);
-  return d;
+const highestUV = computed(() => {
+  if (!weather.value) return 0;
+  return weather.value.forecast.forecastday.reduce((acc, forecast) => {
+    return Math.max(acc, forecast.day.uv);
+  }, 0);
+});
+const highestChanceOfRain = computed(() => {
+  if (!weather.value) return 0;
+  return weather.value.forecast.forecastday.reduce((acc, forecast) => {
+    return Math.max(acc, forecast.day.daily_chance_of_rain);
+  }, 0);
+});
+const setsOfClothes = computed(() => {
+  return (days.value >= 5 ? 5 : days.value).toString();
 });
 
 async function getWeather(location: string) {
@@ -240,4 +285,8 @@ async function getWeather(location: string) {
     console.error(error);
   }
 }
+
+onMounted(() => {
+  getWeather(location.value);
+});
 </script>
